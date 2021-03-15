@@ -1,0 +1,45 @@
+Prometheus 是由 SoundCloud 开发的开源监控报警系统和时序列数据库。从字面上理解，Prometheus 由两个部分组成，一个是监控报警系统，另一个是自带的时序数据库（TSDB）。
+
+Prometheus获取数据的方式只有一种，就是scrape，也称作pull，意为拉取。Prometheus每隔一段时间会从目标(target)这里以Http协议拉取指标(metrics)，这些目标可以是应用，也可以是代理，缓存中间件，数据库等等一些中间件。
+拉取出来的数据Prometheus会存到自己的TSDB数据库。自己的WebUI控制台以及Grafana可以对其数据进行时间范围内的不断查询，绘制成实时图表工展现。
+Prometheus 支持例如zookeeper,consul之类的服务发现中间件，用以对目标(target)的自动发现。而不用一个个去配置target了。
+alertManager组件支持自定义告警规则，告警渠道也支持很多种
+
+
+Prometheus Server: 数据的采集和存储，PromQL查询，报警配置。
+Push gateway: 用于批量，短期的监控数据的汇报总节点。
+Exporters: 各种汇报数据的exporter，例如汇报机器数据的node_exporter，汇报MondogDB信息的 MongoDB_exporter 等等。
+Alertmanager: 用于高级通知管理。
+Grafana: 数据展示
+
+它的服务过程是这样的Prometheus daemon负责定时去目标上抓取metrics(指标) 数据，每个抓取目标需要暴露一个http服务的接口给它定时抓取
+Prometheus：支持通过配置文件、文本文件、zookeeper、Consul、DNS SRV lookup等方式指定抓取目标。支持很多方式的图表可视化，例如十分精美的Grafana，自带的Promdash，以及自身提供的模版引擎等等，还提供HTTP API的查询方式，自定义所需要的输出。
+
+Alertmanager：是独立于Prometheus的一个组件，可以支持Prometheus的查询语句，提供十分灵活的报警方式。
+
+PushGateway：这个组件是支持Client主动推送metrics到PushGateway，而Prometheus只是定时去Gateway上抓取数据。
+大多数Prometheus组件都是用Go编写的，它们可以轻松地构建和部署为静态二进制文件。访问https://prometheus.io以获取完整的文档，示例和指南。
+
+
+
+
+怎么采集数据？
+要采集目标（主机或服务）的监控数据，首先就要在被采集目标上安装采集组件，这种采集组件被称为Exporter。http://prometheus.io官网上有很多这种exporter，比如：
+Consul exporter (official)
+Memcached exporter (official)
+MySQL server exporter (official)
+Node/system metrics exporter (official)
+HAProxy exporter (official)
+RabbitMQ exporter
+Grok exporter
+InfluxDB exporter (official)
+这些exporter能为我们采集目标的监控数据，然后传输给普罗米修斯。这时候，exporter会暴露一个http接口，普罗米修斯通过HTTP协议使用Pull的方式周期性拉取相应的数据。
+
+不过，普罗也提供了Push模式来进行数据传输，通过增加Push Gateway这个中间商实现，你可以将数据推送到Push Gateway，普罗再通过Pull的方式从Push Gateway获取数据。
+
+
+Alertmanager：Prometheus通过配置文件中定义的自定义规则将告警信息推送到Alertmanager。Alertmanager可以将其导出到多个端点，例如Pagerduty或Slack等。
+
+数据可视化：与Grafana、Kibana等类似，可以直接在Web UI中可视化时间序列数据。轻松过滤查看了不通监控目标的信息。
+
+服务发现：Prometheus可以动态发现监控目标，并根据需要自动废弃目标。这在云架构中使用动态变更地址的容器时，尤为方便。

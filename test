@@ -1,0 +1,51 @@
+bitnami prometheus image
+https://github.com/bitnami/bitnami-docker-prometheus/blob/2.24.1-debian-10-r16/2/debian-10/Dockerfile
+
+official prometheus image
+https://github.com/prometheus/prometheus/blob/master/Dockerfile
+
+
+版本 2.24.1
+https://github.com/prometheus/prometheus/releases/download/v2.24.1/prometheus-2.24.1.linux-amd64.tar.gz
+https://github.com/prometheus/prometheus/releases/download/v2.25.0/prometheus-2.25.0.linux-amd64.tar.gz
+
+supervisor
+https://monaive.gitbook.io/prometheus/parti-prometheus-ji-chu/deploy/deploy_bin
+
+grafana bitnami image
+https://github.com/bitnami/bitnami-docker-grafana/blob/master/7/debian-10/Dockerfile
+
+下载包位置  https://grafana.com/grafana/download
+https://dl.grafana.com/oss/release/grafana-7.4.2.linux-amd64.tar.gz
+
+配置文件结构
+
+数据保留时间可以灵活判断
+--storage.tsdb.path和--storage.tsdb.retention.time
+
+加一个 .docker-entrypointd 目录
+
+/usr/share/grafana/bin/grafana-cli  --pluginsDir /cloudclusters/grafana/data/plugins plugins ls
+=================
+alertmanager
+alertmanager  --config.file=alertmanager.yml --storage.path=data --data.retention=24h
+
+https://erdong.site/Grafana/grafana-admin-password-reset.html
+
+
+https://github.com/prometheus/alertmanager/releases/download/v0.21.0/alertmanager-0.21.0.linux-amd64.tar.gz
+
+探针
+
+数据源模板
+仪表盘模板
+
+
+
+
+kb文档整个流程
+
+
+
+
+htpasswd -bn  admin 123456

@@ -1,0 +1,81 @@
+Prometheus 是由 SoundCloud 开发的开源监控报警系统和时序列数据库。
+从字面上理解，Prometheus 由两个部分组成，一个是监控报警系统，另一个是自带的时序数据库（TSDB）。
+
+Prometheus Server: 数据的采集和存储，PromQL查询，报警配置。
+Push gateway: 用于批量，短期的监控数据的汇报总节点。
+Exporters: 各种汇报数据的exporter，例如汇报机器数据的node_exporter，汇报MondogDB信息的 MongoDB_exporter 等等。
+Alertmanager: 用于高级通知管理。
+Grafana: 数据展示
+
+步骤一
+部署普罗米修斯  测试环境 prometheus-1234
+helm install prometheus-1234 --namespace prometheus-1234 -f value-base.yaml  ./
+
+步骤二
+添加 node-exporter
+wget https://github.com/prometheus/node_exporter/releases/download/v1.1.2/node_exporter-1.1.2.linux-amd64.tar.gz
+tar xf node_exporter-1.1.2.linux-amd64.tar.gz
+./node_exporter &
+
+root@ubuntu:~/prometheus/node_exporter-1.1.2.linux-amd64# lsof -i:9100
+COMMAND     PID USER   FD   TYPE   DEVICE SIZE/OFF NODE NAME
+node_expo 14437 root    3u  IPv6 56631316      0t0  TCP *:9100 (LISTEN)
+
+curl localhost:9100/metrics
+
+步骤三
+配置Prometheus instances
+进入容器，修改配置文件 /cloudclusters/prometheus/conf
+添加一个 scrape_configs
+ - job_name: "node"
+    static_configs:
+    - targets: ["216.172.109.21:9100"]
+
+重启服务，使修改后的配置文件生效
+supervisorctl reload
+
+步骤四
+安装grafana
+helm install prometheus-1234 --namespace prometheus-1234 -f value-base.yaml  ./
+
+grafana 界面添加普罗米修斯 数据源
+添加url prometheus-1234.tripanels.com
+Basic Auth  user:admin password:123456
+然后进入仪表盘，可以看到模板中有主机的数据
+
+====
+push gateway
+pushgateway 是另一种采用被动推送的方式获取监控数据的prometheus插件，它可以单独运行在任何节点上(go语言开发)
+用户自定义开发脚本，把需要监控的数据发送给pushgateway，然后pushgateway再把数据推送给prometheus server
+https://prometheus.io/download/#pushgateway
+https://github.com/prometheus/pushgateway/releases/download/v1.4.0/pushgateway-1.4.0.linux-amd64.tar.gz
+
+./pushgateway  --web.listen-address=0.0.0.0:9091 &
+
+访问web界面
+http://216.172.109.149:9091/
+
+在prometheus.yml 配置文件中，单独定义一个job, 然后target 指向到pushgateway 运行所在的机器ip和端口
+ - job_name: "pushgateway"
+   static_configs:
+   - targets: ["216.172.109.149:9091"]
+重启服务
+
+自定义编写脚本
+pushgateway 本身是没有任何抓取监控数据的功能的，它只是被动的等待推送过来
+
+使用shell 编写的pushgateway脚本用于抓取TCP waiting_connection 瞬时数量
+设置定时任务，每隔15s 推一次
+*/1 * * * * sleep 00; bash /root/prometheus/push_gateway.sh
+*/1 * * * * sleep 15; bash /root/prometheus/push_gateway.sh
+*/1 * * * * sleep 30; bash /root/prometheus/push_gateway.sh
+*/1 * * * * sleep 45; bash /root/prometheus/push_gateway.sh
+
+
+=====
+告警管理
+
+
+
+
+
